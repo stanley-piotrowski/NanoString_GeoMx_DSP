@@ -10,3 +10,7 @@ The following directories and files are included in this project:
 
 * `summary.txt`: contains the summary metrics for each demo sample, including the number of raw, trimmed, stitched, aligned (not applicable in this workflow), and total number of deduplicated reads.  
 
+* `FASTQ`: contains the compressed (`.gz`) R1 and R2 FASTQ files for each sample.
+
+* `Demo_Configuration.ini`: configuration file from the NanoString GeoMx DSP instrument used as input for the GeoMx DSP NGS Pipeline with Illumina DRAGEN to generate DCC files.  The configuration file contains summary information on the instrument model and read pattern (e.g., 27x27 for paired-end 27-cycle chemistry), the adapter sequences used, and the targets (RTS numbers and associated sequences).
+

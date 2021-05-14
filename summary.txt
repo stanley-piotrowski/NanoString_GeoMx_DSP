@@ -1,0 +1,3 @@
+File: DSP-Demo-A-A01, Raw: 15000, Trimmed: 11830, Stitched: 11830, Aligned: 0, TotalDedup: 0
+File: DSP-Demo-A-A02, Raw: 18869192, Trimmed: 18843631, Stitched: 18843631, Aligned: 18357095, TotalDedup: 3544907
+File: DSP-Demo-A-A03, Raw: 25523270, Trimmed: 25491019, Stitched: 25491019, Aligned: 24606992, TotalDedup: 4304117
