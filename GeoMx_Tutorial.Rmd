@@ -1,0 +1,109 @@
+---
+title: "GeomxTools Tutorial"
+output:
+  html_output:
+    toc: true
+    toc_float: true
+    theme: cerulean
+    syntax: highlight
+---
+
+```{r setup, warning = FALSE, message = FALSE}
+# Install necessary packages ----
+# Install the dependency NanoString nCounter Tools package from GitHub
+devtools::install_github("Nanostring-Biostats/NanoStringNCTools")
+
+# Install the NanoString GeoMx Tools package from GitHub
+devtools::install_github("Nanostring-Biostats/GeomxTools")
+
+# If errors encountered while building the vignettes, skip and read on GitHub
+
+# Load libraries ----
+library(tidyverse)
+library(BiocManager)
+library(GeomxTools)
+library(NanoStringNCTools)
+```
+
+
+## Introduction
+
+An introduction to the package is provided [here](https://bioconductor.org/packages/devel/bioc/vignettes/GeomxTools/inst/doc/Introduction.html).
+
+## Building a NanoString Geomx Set from Example DCC files
+
+The code below is largely following the tutorial from the URL above.
+
+```{r dcc-tutorial}
+# Setup ----
+# Define the data directory from the package
+data_dir <- system.file("extdata", "DSP_NGS_Example_Data", 
+                        package = "GeomxTools")
+
+# Define DCC files
+dcc_files <- dir(data_dir, pattern = ".dcc$", full.names = TRUE)
+
+# Define PKC files 
+pkc_files <- unzip(zipfile = file.path(data_dir, "/pkcs.zip"))
+
+# Define sample annotation file 
+sample_annotation_file <- file.path(data_dir, "annotations.xlsx")
+
+# Load demo data 
+demo_data <- suppressWarnings(readNanoStringGeomxSet(dccFiles = dcc_files, 
+                                                     pkcFiles = pkc_files, 
+                                                     phenoDataFile = sample_annotation_file,
+                                                     phenoDataSheet = "CW005",
+                                                     phenoDataDccColName = "Sample_ID",
+                                                     protocolDataColNames = c("aoi", 
+                                                                              "cell_line",
+                                                                              "roi_rep",
+                                                                              "pool_rep",
+                                                                              "slide_rep"),
+                                                     experimentDataColNames = c("panel")))
+
+# Examine the structure of the object
+glimpse(demo_data)
+```
+From here, we can take a closer look at some of slots in the S4 object, notably the `phenoData`.  The tidy rectangular data structure can be assessed using the `@` notation, as I've done below.  The `phenoData` contains the phenotypic data and metadata associated with an experiment.  In the `NanoStringGeomxSet`, the `phenoData` contains data on the slide name, scan name, region of interest (ROI), the segment (e.g., geometric segment), and the area 
+
+```{r}
+# Convert the phenotypic data to a rectangular data frame and replace NA with NTC in scan name
+phenoData_df <- demo_data@phenoData@data %>% 
+  data.frame() %>% 
+  rownames_to_column("sample.name") %>% 
+  mutate(scan.name = replace_na(scan.name, "NTC"))
+
+# Get an overview of the number of ROIs per scan
+phenoData_df %>% 
+  group_by(scan.name) %>% 
+  summarise(num_ROI = n())
+```
+
+The NanostringGeomxSet is inherited from the `Biobase` `ExpressionSet` class.  A detailed overview of this class is available [here](https://www.bioconductor.org/packages/release/bioc/vignettes/Biobase/inst/doc/ExpressionSetIntroduction.pdf), which I'll use to explore the NanoString GeoMx data.  The data structure essentially encapsulates the read counts for all targets in each sample and combines that experimental data with metadata about the samples, the instrument, and the protocol used.  Below, we can see the expression data, where the first column is the gene name and all the remaining columns are the sample names, and each row contains the expression data for a gene in a sample.
+
+```{r}
+# Confirm that the rownames in the phenotype data slot match the number of columns in the expression data slot
+all(rownames(demo_data@phenoData) == colnames(demo_data@assayData$exprs)) # TRUE- what we need
+
+# View the expression data in a data frame
+demo_data@assayData$exprs %>% 
+  data.frame() %>% 
+  rownames_to_column("Gene")
+```
+
+## Basic ExpressionSet Operations
+
+A list of the all of the methods and a summary of the basic structure of an `ExpressionSet` instance can be found using `help("ExpressionSet-class")`.  Instead of accessing the slots using the `@` approach, we can use the various methods (e.g., `phenoData()` to extract the phenotypic data).  For example, we can see the basic experiment data, which describes the panel version information (Cancer Transcriptome Atlas v1.2 and a six-gene custom test panel v1.1), the analyte type (RNA), and metadata on the experimenter, laboratory, and any relevant contact information or URLs.
+
+```{r experiment-data}
+experimentData(demo_data)
+```
+
+To subset the `ExpressionSet` instance, use the bracket notation with two arguments: the first argument will define the features to subset, and the second argument will define the samples to subset.  For example, subsetting the first 10 features for the first 10 samples:
+
+```{r subsetting-example}
+demo_data[1:10, 1:10]
+```
+
+
